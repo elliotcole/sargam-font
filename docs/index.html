@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sargam Font Preview</title>
+<style>
+  /* The -N suffix on each @font-face URL is auto-bumped by its build script
+     (see scripts/build*.py § bump_preview_cache_buster). Safari ignores ?v=
+     query strings on file:// URLs, so the version lives in the filename. */
+  @font-face {
+    font-family: 'LatoSargam';
+    src: url('fonts/Lato-Sargam-v2-15.woff2') format('woff2'),
+         url('fonts/Lato-Sargam-v2-15.woff') format('woff');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'LatoSargam';
+    src: url('fonts/Lato-Sargam-v2-Bold-15.woff2') format('woff2'),
+         url('fonts/Lato-Sargam-v2-Bold-15.woff') format('woff');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'MuktaSargam';
+    src: url('fonts/Mukta-Sargam-9.woff2') format('woff2'),
+         url('fonts/Mukta-Sargam-9.woff') format('woff');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'MuktaSargam';
+    src: url('fonts/Mukta-Sargam-Bold-9.woff2') format('woff2'),
+         url('fonts/Mukta-Sargam-Bold-9.woff') format('woff');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'MuktaSargamHindi';
+    src: url('fonts/Mukta-Sargam-Hindi-5.woff2') format('woff2'),
+         url('fonts/Mukta-Sargam-Hindi-5.woff') format('woff');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'MuktaSargamHindi';
+    src: url('fonts/Mukta-Sargam-Hindi-Bold-5.woff2') format('woff2'),
+         url('fonts/Mukta-Sargam-Hindi-Bold-5.woff') format('woff');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'MuktaSargamPunjabi';
+    src: url('fonts/Mukta-Sargam-Punjabi-4.woff2') format('woff2'),
+         url('fonts/Mukta-Sargam-Punjabi-4.woff') format('woff');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'MuktaSargamPunjabi';
+    src: url('fonts/Mukta-Sargam-Punjabi-Bold-4.woff2') format('woff2'),
+         url('fonts/Mukta-Sargam-Punjabi-Bold-4.woff') format('woff');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+
+  :root {
+    --bg: #fafafa;
+    --fg: #1a1a1a;
+    --muted: #777;
+    --border: #e3e3e3;
+    --dotted: #eee;
+    --accent: #0f4c81;
+    --pill-bg: #fff;
+    --pill-active-bg: #1a1a1a;
+    --pill-active-fg: #fafafa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --fg: #f1f1f1; --muted: #888;
+      --border: #2a2e33; --dotted: #25292d; --accent: #6cb1f0;
+      --pill-bg: #1f2225; --pill-active-bg: #f1f1f1; --pill-active-fg: #14171a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+  h1 { font-weight: 600; margin: 0 0 0.2em; font-size: 1.7rem; }
+  h2 {
+    font-weight: 500;
+    margin: 2.4em 0 0.8em;
+    font-size: 1rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.4em;
+  }
+  .sub { color: var(--muted); margin: 0 0 1.5em; }
+
+  /* Font toggle bar — sticky so it stays visible when scrolling. */
+  .font-toggle {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    padding: 0.8rem 0;
+    margin: 0 0 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .font-toggle button {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--pill-bg);
+    color: var(--fg);
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .font-toggle button:hover {
+    border-color: var(--fg);
+  }
+  body[data-font="lato"]    .font-toggle button[data-font="lato"],
+  body[data-font="mukta"]   .font-toggle button[data-font="mukta"],
+  body[data-font="hindi"]   .font-toggle button[data-font="hindi"],
+  body[data-font="punjabi"] .font-toggle button[data-font="punjabi"] {
+    background: var(--pill-active-bg);
+    color: var(--pill-active-fg);
+    border-color: var(--pill-active-bg);
+  }
+
+  /* Active-font selector. Default is Lato. */
+  body[data-font="lato"]    .sample, body[data-font="lato"]    textarea { font-family: 'LatoSargam', serif; }
+  body[data-font="mukta"]   .sample, body[data-font="mukta"]   textarea { font-family: 'MuktaSargam', serif; }
+  body[data-font="hindi"]   .sample, body[data-font="hindi"]   textarea { font-family: 'MuktaSargamHindi', serif; }
+  body[data-font="punjabi"] .sample, body[data-font="punjabi"] textarea { font-family: 'MuktaSargamPunjabi', serif; }
+
+  .sample, textarea {
+    font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+    -webkit-font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+    font-kerning: normal;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px dotted var(--dotted);
+  }
+  .row .label {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .row .label code { font-size: 0.95em; background: var(--dotted); padding: 1px 6px; border-radius: 3px; color: var(--fg); }
+  .sample { font-size: 36px; line-height: 1.3; }
+  .sample.sm { font-size: 18px; }
+  .sample.bold { font-weight: 700; }
+
+  .controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin: 1.5rem 0 0;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--dotted);
+  }
+  .controls label { font-size: 0.85rem; color: var(--muted); }
+  .controls input[type="range"] { flex: 1; }
+  .controls .size-readout { font-variant-numeric: tabular-nums; min-width: 3em; text-align: right; }
+
+  textarea {
+    width: 100%;
+    min-height: 160px;
+    font-size: 32px;
+    line-height: 1.6;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--fg);
+    resize: vertical;
+  }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+</style>
+</head>
+<body data-font="lato">
+
+<h1>Sargam Font Preview</h1>
+<p class="sub">All four fonts share the same input conventions. Pick a font from the toggle below — the demos and the playground will swap to it.</p>
+
+<nav class="font-toggle" aria-label="Font selector">
+  <button data-font="lato"    type="button">Lato-Sargam</button>
+  <button data-font="mukta"   type="button">Mukta-Sargam (Latin)</button>
+  <button data-font="hindi"   type="button">Mukta-Sargam-Hindi (Devanagari)</button>
+  <button data-font="punjabi" type="button">Mukta-Sargam-Punjabi (Gurmukhi)</button>
+</nav>
+
+<h2>Bare swaras</h2>
+<div class="row"><div class="label">Shuddha — <code>S R G m P D N</code></div><div class="sample">S R G m P D N</div></div>
+<div class="row"><div class="label">Komal — <code>r g d n</code></div><div class="sample">r g d n</div></div>
+<div class="row"><div class="label">Tivra Ma — <code>M</code> vs <code>m</code></div><div class="sample">m M m M</div></div>
+<div class="row"><div class="label">Full sa-grama, mixed</div><div class="sample">S r R g G m M P d D n N</div></div>
+
+<h2>Octave</h2>
+<div class="row"><div class="label">Tar — <code>S'</code> apostrophe suffix</div><div class="sample">S' R' G' m' M' P' D' N'</div></div>
+<div class="row"><div class="label">Mandra — <code>,S</code> comma prefix</div><div class="sample">,S ,R ,G ,m ,M ,P ,D ,N</div></div>
+<div class="row"><div class="label">Mandra komal — <code>,r ,g ,d ,n</code></div><div class="sample">,r ,g ,d ,n</div></div>
+<div class="row"><div class="label">Tar komal — <code>r' g' d' n'</code></div><div class="sample">r' g' d' n'</div></div>
+<div class="row"><div class="label">Three-octave traversal</div><div class="sample">,N ,D ,P S R G m P D N S'</div></div>
+
+<h2>Ornaments</h2>
+<div class="row"><div class="label">Murki — <code>S~</code> single mark</div><div class="sample">S~ R~ g~ M~ P~ d~ N~</div></div>
+<div class="row"><div class="label">Andolan — <code>S~~</code> wave AFTER letter</div><div class="sample">S~~ R~~ g~~ M~~</div></div>
+<div class="row"><div class="label">Andolan in phrase</div><div class="sample">S R G~~ m P</div></div>
+
+<h2>Meend</h2>
+<div class="row"><div class="label">Ascending — <code>/</code></div><div class="sample">/ / /</div></div>
+<div class="row"><div class="label">Descending — <code>\</code></div><div class="sample">\ \ \</div></div>
+<div class="row"><div class="label">Between swaras</div><div class="sample">S/R G\m P/D</div></div>
+
+<h2>Kan sur (superscript) — <code>(srg)</code></h2>
+<div class="row"><div class="label">Single letter — <code>(s)</code></div><div class="sample">(s) (R) (g)</div></div>
+<div class="row"><div class="label">Multi-letter run</div><div class="sample">(srg) (RGm) (NDP)</div></div>
+<div class="row"><div class="label">In a phrase</div><div class="sample">S R (srg)m P (gm)D N</div></div>
+<div class="row"><div class="label">With octave variants</div><div class="sample">(,SR)S (RG')m (g)P</div></div>
+
+<h2>Subscript — <code>[srg]</code></h2>
+<div class="row"><div class="label">Single letter — <code>[s]</code></div><div class="sample">[s] [R] [g]</div></div>
+<div class="row"><div class="label">Multi-letter run</div><div class="sample">[srg] [RGm] [NDP]</div></div>
+<div class="row"><div class="label">In a phrase</div><div class="sample">S [r] G [mP] D [n]</div></div>
+
+<h2>Bold weight</h2>
+<div class="row"><div class="label">Mixed sample</div><div class="sample bold">,S R G~ m M~ P D~~ N S'</div></div>
+<div class="row"><div class="label">Komal + tivra bold</div><div class="sample bold">r g m M d n</div></div>
+
+<h2>At grid size (18px)</h2>
+<div class="row"><div class="label">Small render — what users see in beat cells</div><div class="sample sm">S R G m M P D N | ,S ,R ,G | S' R' G' | S~ G~~ | S/R G\m | (rg)S [m]G</div></div>
+
+<h2>Playground</h2>
+<p class="sub">Type freely. Drag the slider to test at different sizes.</p>
+<div class="controls">
+  <label for="size">Size:</label>
+  <input type="range" id="size" min="12" max="80" value="32">
+  <span class="size-readout" id="size-readout">32 px</span>
+</div>
+<textarea id="play" spellcheck="false">S R G m P D N S'
+,S ,R ,G m ,M P D N
+S~ R~ g~~ M~ P~~ N
+S/R G\m P/D N\S'
+S R (srg)m P (gm)D N
+S [r] G [mP] D [n]
+,N ,D ,P S R G m M P D N S'</textarea>
+
+<footer>
+After a rebuild the @font-face URLs are auto-bumped to a fresh -N suffix; reload to pick up the new build. Toggle saves between reloads via localStorage.
+</footer>
+
+<script>
+  // Font toggle. Persists across reloads via localStorage.
+  const FONT_KEY = 'sargam-font';
+  const validFonts = ['lato', 'mukta', 'hindi', 'punjabi'];
+  const saved = localStorage.getItem(FONT_KEY);
+  if (saved && validFonts.includes(saved)) {
+    document.body.dataset.font = saved;
+  }
+  document.querySelectorAll('.font-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.font;
+      document.body.dataset.font = f;
+      localStorage.setItem(FONT_KEY, f);
+    });
+  });
+
+  // Size slider for the playground.
+  const range = document.getElementById('size');
+  const readout = document.getElementById('size-readout');
+  const play = document.getElementById('play');
+  range.addEventListener('input', () => {
+    play.style.fontSize = range.value + 'px';
+    readout.textContent = range.value + ' px';
+  });
+</script>
+
+</body>
+</html>

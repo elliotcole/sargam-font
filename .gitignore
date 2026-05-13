@@ -1,0 +1,18 @@
+# build output (the docs/ folder contains the copies needed for GitHub Pages)
+out/
+
+# python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Claude Code per-project settings (machine-local)
+.claude/
+
+# internal working doc (not for the public repo)
+HANDOFF.md
+
+# upstream fonts not yet used by any build script (kept locally, not committed)
+src/Baloo/
