@@ -1,6 +1,6 @@
 # Sargam Font Preview
 
-Live preview: https://<your-github-username>.github.io/sargam-font/
+Live preview: https://elliotcole.github.io/sargam-font/
 
 Hindustani classical sargam notation rendered through four font variants:
 - **Lato-Sargam** (Latin output)
