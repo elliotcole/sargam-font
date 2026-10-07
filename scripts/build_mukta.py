@@ -30,6 +30,7 @@ from fontTools.ttLib.tables import ttProgram
 from fontTools.ttLib.tables.otTables import Ligature
 from fontTools.ttLib.tables import otTables as ot
 from fontTools.pens.ttGlyphPen import TTGlyphPen
+from fontTools.pens.recordingPen import DecomposingRecordingPen
 from fontTools.pens.boundsPen import ControlBoundsPen, BoundsPen
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -109,6 +110,29 @@ def _make_composite(parts):
             c.transform = ((scale, 0), (0, scale))
         g.components.append(c)
     return g
+
+
+def _flatten_glyphs(font, names):
+    """Replace each named composite with plain contours, transform applied.
+
+    Scaled composites that reference other composites (e.g. r_super → r →
+    R → Ra.gm + matra) render differently across rasterizers: Windows
+    doesn't scale component offsets the way Apple does when neither
+    SCALED_ nor UNSCALED_COMPONENT_OFFSET is set, and its hinting of
+    scaled components left kan-sur letters full-height and dropped matras.
+    Flat outlines carry no offsets or instructions to disagree about.
+    """
+    glyf, hmtx = font['glyf'], font['hmtx']
+    gs = font.getGlyphSet()
+    for name in names:
+        rec = DecomposingRecordingPen(gs)
+        gs[name].draw(rec)
+        pen = TTGlyphPen(None)
+        rec.replay(pen)
+        g = pen.glyph()
+        g.recalcBounds(glyf)
+        glyf[name] = g
+        hmtx[name] = (hmtx[name][0], g.xMin if g.numberOfContours else 0)
 
 
 def _make_rect(x_left, y_low, x_right, y_high):
@@ -432,6 +456,10 @@ def modify_font(input_path: str, output_path: str):
         if n not in glyph_order:
             glyph_order.append(n)
     font.setGlyphOrder(glyph_order)
+
+    # Flatten the scaled kan-sur / subscript glyphs (see _flatten_glyphs).
+    _flatten_glyphs(font, [*super_pairs.values(), *sub_pairs.values(),
+                           *super_tight_pairs.values(), *sub_tight_pairs.values()])
 
     # ── Step 6: Add GSUB ligatures ────────────────────────────────────
     # Find the 'liga' lookup; pick the first lookup type 4 referenced by liga.
