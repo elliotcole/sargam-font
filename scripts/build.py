@@ -64,22 +64,49 @@ def modify_font(input_path: str, output_path: str):
     # reads clearly as a tivra marker. Operates on contour 1's 4-point
     # quad assumed by glyph00315's structure.
     from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates as _GlyphCoords
-    def relocate_tivra_mark(glyph_obj, mark_width=210, y_low=1480, y_high=1980):
+    #
+    # The same relocation is applied to v1's mandra-tivra (glyph00317) and
+    # tar-tivra (glyph00316), which otherwise keep the old in-notch bar —
+    # so every M form shows one identical bar. The bar dips into the
+    # V-notch and stops just short of v1's tar dot, which already sits at
+    # one uniform height for every tar letter (y 1782-2010, at the
+    # ascender) — so M' lines up with S', P' etc. (Bhatkhande practice).
+    def relocate_tivra_mark(glyph_obj, y_high, y_low=1080):
+        # Contour order differs between Regular and Bold (and between
+        # glyph00315/316/317), so find the mark structurally: it's the
+        # unique 4-point contour. The letter is the largest contour.
         coords = list(glyph_obj.coordinates)
-        # Letter is contour 0 (everything except the last 4 mark points).
-        letter_xs = [p[0] for p in coords[:-4]]
+        ends = glyph_obj.endPtsOfContours
+        spans = [(0 if i == 0 else ends[i - 1] + 1, e + 1) for i, e in enumerate(ends)]
+        mark = [sp for sp in spans if sp[1] - sp[0] == 4]
+        assert len(mark) == 1, f'expected one 4-point tivra contour, got {len(mark)}'
+        m0, m1 = mark[0]
+        l0, l1 = max(spans, key=lambda sp: sp[1] - sp[0])
+        letter_xs = [p[0] for p in coords[l0:l1]]
         x_center = (min(letter_xs) + max(letter_xs)) / 2
-        half = mark_width / 2
+        # Keep v1's own mark width (155 Regular, 195 Bold) so weight matches.
+        mark_xs = [p[0] for p in coords[m0:m1]]
+        half = (max(mark_xs) - min(mark_xs)) / 2
         x_left  = round(x_center - half)
         x_right = round(x_center + half)
-        coords[-4:] = [
+        coords[m0:m1] = [
             (x_right, y_high),  # top-right    (CW winding)
             (x_right, y_low),   # bottom-right
             (x_left,  y_low),   # bottom-left
             (x_left,  y_high),  # top-left
         ]
         glyph_obj.coordinates = _GlyphCoords(coords)
-    relocate_tivra_mark(glyf['M'])
+    # Bar top = tar dot bottom minus a gap, measured from v1's tar-tivra
+    # glyph (dot bottom is 1782 Regular, 1744 Bold).
+    TIVRA_TAR_DOT_GAP = 90
+    g316 = glyf['glyph00316']
+    g316_coords = g316.getCoordinates(glyf)[0]
+    g316_ends = g316.endPtsOfContours
+    contour_min_ys = [min(p[1] for p in g316_coords[(0 if i == 0 else g316_ends[i - 1] + 1):e + 1])
+                      for i, e in enumerate(g316_ends)]
+    tar_dot_bottom = max(contour_min_ys)   # the dot is the highest contour
+    for tivra_glyph in ('M', 'glyph00316', 'glyph00317'):
+        relocate_tivra_mark(glyf[tivra_glyph], y_high=tar_dot_bottom - TIVRA_TAR_DOT_GAP)
     # s ← S, p ← P
     glyf['s'], hmtx['s'] = src_S, src_S_mx
     glyf['p'], hmtx['p'] = src_P, src_P_mx

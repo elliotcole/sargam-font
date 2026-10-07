@@ -47,23 +47,21 @@ ALIAS         = {'s': 'S', 'p': 'P'}   # lowercase that just mirrors uppercase
 
 # All distance/size constants are in units-per-em-relative font units.
 # Mukta is 1000 upem; cap height 630, x-height 468, ascender 1130, descender -532.
-TIVRA_BAR_W           = 60     # vertical bar width above M (regular tivra)
-TIVRA_BAR_Y_LOW       = 700    # bar bottom edge (just above cap height)
-TIVRA_BAR_Y_HIGH      = 920    # bar top edge (regular tivra, plain M)
-
-# When M is also tar (M'), the tivra bar tucks INTO the V-notch of M, with
-# its tip poking slightly above cap height — leaving the regular tar-dot
-# position above cap free. Imitates Lato v1's pre-drawn tar-tivra glyph.
-TIVRA_BAR_W_NOTCHED   = 80     # slightly wider; sits inside the V-notch
-TIVRA_BAR_Y_LOW_NOTCHED  = 520 # ~110u below cap (upper V-notch); proportional to Lato's bar
-TIVRA_BAR_Y_HIGH_NOTCHED = 760 # ~130u above cap height
+# Tivra and tar follow Bhatkhande practice (cf. OmeBhatkhande): the tivra
+# bar stands ON the letter, rising from its top (cap height / headline),
+# and every tar dot sits at one uniform height — high enough to clear both
+# the tivra bar and the Re/Ni matras — so M' needs no special case.
+TIVRA_BAR_W           = 60     # vertical bar width above M
+TIVRA_TAR_DOT_GAP     = 40     # gap between tivra bar top and tar dot bottom
+# Bar bottom is measured at build time from the letter's ink top; bar top
+# is TAR_DOT_Y - DOT_RADIUS - TIVRA_TAR_DOT_GAP.
 
 KOMAL_BAR_THICK   = 60     # horizontal underline thickness
 KOMAL_BAR_Y_LOW   = -180   # bar bottom edge (well below baseline)
 KOMAL_BAR_Y_HIGH  = -120   # bar top edge
 
 DOT_RADIUS        = 60     # mandra/tar dot radius (drawn as a 4-curve circle)
-TAR_DOT_Y         = 920    # dot center, above cap height (clears tivra bar)
+TAR_DOT_Y         = 1000   # dot center, uniform for all tar letters (clears tivra bar and matras ~900)
 MANDRA_DOT_Y      = -290   # dot center, below baseline (clears komal underline)
 
 # Andolan wave (one shared andolan_wave glyph). Half of Lato's units.
@@ -276,27 +274,16 @@ def modify_font(input_path: str, output_path: str):
     # gets shifted unexpectedly. Keeping mark glyphs at xMin=0 with lsb=0
     # makes the normalization a no-op and the composite offset is the only
     # thing positioning the mark.
+    m_bounds = BoundsPen(glyph_set)
+    glyph_set['m'].draw(m_bounds)
     glyf['tivra_bar'] = _make_rect(
         x_left  = 0,
-        y_low   = TIVRA_BAR_Y_LOW,
+        y_low   = round(m_bounds.bounds[3]),   # stands on the letter top
         x_right = TIVRA_BAR_W,
-        y_high  = TIVRA_BAR_Y_HIGH,
+        y_high  = TAR_DOT_Y - DOT_RADIUS - TIVRA_TAR_DOT_GAP,
     )
     hmtx['tivra_bar'] = (0, 0)
     new_glyphs.append('tivra_bar')
-
-    # Notched tivra bar for the tar variant of M (M_tar): drops INTO the
-    # M's V-notch with the tip poking slightly above cap, mirroring Lato
-    # v1's pre-drawn tar-tivra glyph. Leaves the regular tar-dot position
-    # above cap free for the dot.
-    glyf['tivra_bar_notched'] = _make_rect(
-        x_left  = 0,
-        y_low   = TIVRA_BAR_Y_LOW_NOTCHED,
-        x_right = TIVRA_BAR_W_NOTCHED,
-        y_high  = TIVRA_BAR_Y_HIGH_NOTCHED,
-    )
-    hmtx['tivra_bar_notched'] = (0, 0)
-    new_glyphs.append('tivra_bar_notched')
 
     # Tivra M = m (= original M) + tivra_bar centered above. Overwrite M.
     M_x_min, M_x_max = letter_ink_x_range('M')
@@ -379,7 +366,6 @@ def modify_font(input_path: str, output_path: str):
 
     mandra_pairs = {}   # base letter → mandra glyph name
     tar_pairs    = {}   # base letter → tar glyph name
-    notched_bar_dx = round(M_center - TIVRA_BAR_W_NOTCHED / 2)
     for letter in SWARA_LETTERS:
         center = letter_ink_center_x(letter)
         dot_dx = round(center - DOT_RADIUS)   # so dot center lands on letter center
@@ -390,23 +376,11 @@ def modify_font(input_path: str, output_path: str):
             ('mandra_dot',  dot_dx, 0, 1.0),
         ])
         hmtx[mandra_name] = hmtx[letter]
-        if letter == 'M':
-            # Tar of tivra M: regular tivra bar (above cap) collides with
-            # the tar dot. Drop the bar into the M's V-notch instead so the
-            # dot has clear space above. m + notched bar + tar dot, built
-            # from scratch (not wrapping the regular M composite).
-            glyf[tar_name] = _make_composite([
-                ('m',                  0,              0, 1.0),
-                ('tivra_bar_notched',  notched_bar_dx, 0, 1.0),
-                ('tar_dot',            dot_dx,         0, 1.0),
-            ])
-            hmtx[tar_name] = hmtx['m']
-        else:
-            glyf[tar_name] = _make_composite([
-                (letter,    0,      0, 1.0),
-                ('tar_dot', dot_dx, 0, 1.0),
-            ])
-            hmtx[tar_name] = hmtx[letter]
+        glyf[tar_name] = _make_composite([
+            (letter,    0,      0, 1.0),
+            ('tar_dot', dot_dx, 0, 1.0),
+        ])
+        hmtx[tar_name] = hmtx[letter]
         mandra_pairs[letter] = mandra_name
         tar_pairs[letter]    = tar_name
         new_glyphs += [mandra_name, tar_name]
