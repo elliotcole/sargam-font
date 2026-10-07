@@ -324,27 +324,29 @@ def modify_font(input_path: str, output_path: str):
 
     # Syllabic Re and Ni — proper Bhatkhande forms for R/r and N/n. Without
     # Indic shaping, we bake in the positioning hb-shape produces for the
-    # corresponding Devanagari sequences (र + े, न + ि). Both matras already
+    # corresponding Devanagari sequences (र + े, न + ी). Both matras already
     # have hmtx.lsb == glyph.xMin in Mukta, so fontTools' GlyphSet draws
     # them at their native coords without any LSB-normalization shift.
+    # Advances are read from the source font so Bold gets its own metrics.
     #
     # Re = Ra + e-matra. The e-matra's xPlacement in hb-shape output is -60
-    # (relative to cursor after Ra's 410 advance), so the matra's component
-    # offset in our composite is 410 - 60 = 350.
+    # (Regular; -56 in Bold) relative to the cursor after Ra's advance.
+    ra_adv, ra_lsb = hmtx['Ra.dv']
     glyf['R'] = _make_composite([
-        ('Ra.dv',     0,   0, 1.0),
-        ('matraE.dv', 350, 0, 1.0),
+        ('Ra.dv',     0,           0, 1.0),
+        ('matraE.dv', ra_adv - 60, 0, 1.0),
     ])
-    hmtx['R'] = (410, -10)   # advance from Ra.dv, lsb from Ra.dv
+    hmtx['R'] = (ra_adv, ra_lsb)
 
-    # Ni = i-matra REORDERED before the consonant, using matraIthree.dv —
-    # the Indic-shaping contextual variant chosen for Na.dv's width. The
-    # matra advances by 238, then Na.dv follows. Total advance 238+531=769.
+    # Ni (नी) = Na + ii-matra, which follows the consonant (no reordering).
+    # Standard spelling — the short-i नि isn't used for the swara. hb-shape
+    # places the matra at Na's advance with no offset.
+    na_adv, na_lsb = hmtx['Na.dv']
     glyf['N'] = _make_composite([
-        ('matraIthree.dv', 0,   0, 1.0),
-        ('Na.dv',          238, 0, 1.0),
+        ('Na.dv',      0,      0, 1.0),
+        ('matraIi.dv', na_adv, 0, 1.0),
     ])
-    hmtx['N'] = (769, -10)
+    hmtx['N'] = (na_adv + hmtx['matraIi.dv'][0], na_lsb)
 
     # Komal letters: composite of uppercase + komal_bar centered beneath.
     # Komal r (Re-underlined) and komal n (Ni-underlined) inherit the

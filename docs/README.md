@@ -10,7 +10,7 @@ Hindustani classical sargam notation rendered through four font variants:
 
 Type Latin sargam (`S R G m M P D N`, lowercase = komal, `'X` = tar, `,X` = mandra,
 `X~` = murki, `X~~` = andolan, `(X)` = kan-sur, `[X]` = subscript) and the font
-renders it as proper notation — including syllabic रे / ਰੇ for R and नि / ਨਿ for N.
+renders it as proper notation — including syllabic रे / ਰੇ for R and नी / ਨੀ for N.
 
 Source fonts are released under the SIL Open Font License (see OFL.txt).
 The sargam mark layer, OpenType lookups, and composite glyphs are added by

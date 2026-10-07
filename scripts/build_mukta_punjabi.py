@@ -324,29 +324,30 @@ def modify_font(input_path: str, output_path: str):
 
     # Syllabic Re and Ni — proper Bhatkhande forms for R/r and N/n. Without
     # Indic shaping, we bake in the positioning hb-shape produces for the
-    # corresponding Gurmukhi sequences (ਰ + ੇ, ਨ + ਿ). Both matras already
+    # corresponding Gurmukhi sequences (ਰ + ੇ, ਨ + ੀ). Both matras already
     # have hmtx.lsb == glyph.xMin in Mukta Mahee, so fontTools' GlyphSet
     # draws them at their native coords without any LSB-normalization shift.
+    # Advances are read from the source font so Bold gets its own metrics.
     #
     # Re (ਰੇ) = Ra.gm + MatraEe.gm (lavan, sits above). hb-shape places the
-    # matra at xPlacement=+4 from cursor after Ra.gm's 535 advance, so the
-    # matra's component offset is 535 + 4 = 539.
+    # matra at xPlacement=+4 (Regular; +2 in Bold) from the cursor after
+    # Ra.gm's advance.
+    ra_adv, ra_lsb = hmtx['Ra.gm']
     glyf['R'] = _make_composite([
-        ('Ra.gm',      0,   0, 1.0),
-        ('MatraEe.gm', 539, 0, 1.0),
+        ('Ra.gm',      0,          0, 1.0),
+        ('MatraEe.gm', ra_adv + 4, 0, 1.0),
     ])
-    hmtx['R'] = (535, -20)   # advance and lsb from Ra.gm
+    hmtx['R'] = (ra_adv, ra_lsb)
 
-    # Ni (ਨਿ) = MatraI.gm (sihari, REORDERED visually before the consonant)
-    # + Na.gm. Sihari has advance 246, Na.gm has advance 573, so the total
-    # syllable advance is 819. Mukta Mahee has only one MatraI.gm — Gurmukhi
-    # doesn't carry the consonant-width variants Devanagari has, so the
-    # single glyph works for any consonant.
+    # Ni (ਨੀ) = Na.gm + MatraIi.gm (bihari, follows the consonant; no
+    # reordering). Standard spelling — the short-i ਨਿ isn't used for the
+    # swara. hb-shape places bihari at Na.gm's advance with no offset.
+    na_adv, na_lsb = hmtx['Na.gm']
     glyf['N'] = _make_composite([
-        ('MatraI.gm', 0,   0, 1.0),
-        ('Na.gm',     246, 0, 1.0),
+        ('Na.gm',      0,      0, 1.0),
+        ('MatraIi.gm', na_adv, 0, 1.0),
     ])
-    hmtx['N'] = (819, -20)   # advance = 246 + 573, lsb from MatraI.gm
+    hmtx['N'] = (na_adv + hmtx['MatraIi.gm'][0], na_lsb)
 
     # Komal letters: composite of uppercase + komal_bar centered beneath.
     # Komal r (Re-underlined) and komal n (Ni-underlined) inherit the
