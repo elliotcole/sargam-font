@@ -393,8 +393,10 @@ def modify_font(input_path: str, output_path: str):
     # inside the kern feature.
     KAN_SUR_TRAIL_PULL = 130
     super_tight_pairs = {}    # super_name → super_name_tight (super TRAIL pull)
-    base_tight_pairs  = {}    # base_name  → base_name_tight (sub LEAD pull, mirror)
+    base_tight_pairs  = {}    # base_name  → base_name_tight (sub LEAD pull)
+    sub_tight_pairs   = {}    # sub_name   → sub_name_tight  (sub TRAIL pull)
     for base, super_name in super_pairs.items():
+        sub_name = sub_pairs[base]
         # super_tight: SUPER variant with reduced advance — used as the LAST
         # super of a kan-sur cluster so the FOLLOWING swara is laid down
         # earlier (cluster reads as part of the swara it leads into).
@@ -403,11 +405,21 @@ def modify_font(input_path: str, output_path: str):
         super_advance = hmtx[super_name][0]
         hmtx[tight_name] = (max(0, super_advance - KAN_SUR_TRAIL_PULL), 0)
         super_tight_pairs[super_name] = tight_name
-        # base_tight: full-size base letter with reduced advance — mirror,
-        # used as the PRECEDING swara before a sub cluster, so the sub
-        # cluster is laid down earlier (cluster reads as part of the swara
-        # it follows from). Same pull amount as super, just on the other
-        # side of the cluster.
+        # sub_tight: SUB variant with reduced advance — symmetric to
+        # super_tight. Used as the LAST sub of a `[...]` cluster so the
+        # FOLLOWING swara is laid down earlier — the sub cluster reads
+        # as part of the swara it leads to. (User intent: "subscript in
+        # a phrase should have no spaces between the subscript and the
+        # full note it leads to.")
+        sub_tight_name = f'{base}_sub_tight'
+        glyf[sub_tight_name] = make_composite([(base, 0, SUB_DY, SUB_SCALE)])
+        sub_advance = hmtx[sub_name][0]
+        hmtx[sub_tight_name] = (max(0, sub_advance - KAN_SUR_TRAIL_PULL), 0)
+        sub_tight_pairs[sub_name] = sub_tight_name
+        # base_tight: full-size base letter with reduced advance. Used as
+        # the PRECEDING swara before a sub cluster (`S[r]G` → S tight
+        # against `[`) — fires only when the bracket sits immediately
+        # against a swara with no separating space.
         base_tight_name = f'{base}_tight'
         glyf[base_tight_name] = make_composite([(base, 0, 0, 1.0)])
         base_advance_orig = hmtx[base][0]
@@ -422,12 +434,13 @@ def modify_font(input_path: str, output_path: str):
 
     glyph_order = font.getGlyphOrder()
     for n in [*super_pairs.values(), *sub_pairs.values(),
-              *super_tight_pairs.values(), *base_tight_pairs.values(),
+              *super_tight_pairs.values(), *sub_tight_pairs.values(),
+              *base_tight_pairs.values(),
               'kan_sur_invisible']:
         if n not in glyph_order:
             glyph_order.append(n)
     font.setGlyphOrder(glyph_order)
-    print(f"  Generated {len(super_pairs) + len(sub_pairs) + len(super_tight_pairs)} super/sub composites ({len(super_tight_pairs)} tight variants for trailing-edge pull)")
+    print(f"  Generated {len(super_pairs) + len(sub_pairs) + len(super_tight_pairs) + len(sub_tight_pairs)} super/sub composites ({len(super_tight_pairs)} super-tight + {len(sub_tight_pairs)} sub-tight for trailing-edge pull)")
 
     # ── Step 2: ALL GSUB ligature changes in one pass  (MIXED) ──
     # Lato-specific blocks remap the v1 font's existing octave ligatures
@@ -669,6 +682,7 @@ def modify_font(input_path: str, output_path: str):
     idx_super              = add_lookup(make_lookup(1, [make_single_subst(super_pairs)]))
     idx_sub                = add_lookup(make_lookup(1, [make_single_subst(sub_pairs)]))
     idx_super_to_tight     = add_lookup(make_lookup(1, [make_single_subst(super_tight_pairs)]))
+    idx_sub_to_tight       = add_lookup(make_lookup(1, [make_single_subst(sub_tight_pairs)]))
     idx_base_to_tight      = add_lookup(make_lookup(1, [make_single_subst(base_tight_pairs)]))
     idx_hide_paren_open    = add_lookup(make_lookup(1, [make_single_subst({'parenleft':    'kan_sur_invisible'})]))
     idx_hide_paren_close   = add_lookup(make_lookup(1, [make_single_subst({'parenright':   'kan_sur_invisible'})]))
@@ -724,7 +738,7 @@ def modify_font(input_path: str, output_path: str):
         input_=[base_class, ['bracketleft']],
         lookahead=[base_class],
         subst_records=[(0, idx_base_to_tight)])])))
-    # Sub: open, continue, close
+    # Sub: open, continue, trail-pull, close
     top_level.append(add_lookup(make_lookup(6, [make_chain_ctx(
         backtrack=[],
         input_=[['bracketleft'], base_class],
@@ -735,8 +749,22 @@ def modify_font(input_path: str, output_path: str):
         input_=[base_class],
         lookahead=[],
         subst_records=[(0, idx_sub)])])))
+    # Sub TRAIL pull (mirror of super TRAIL pull): substitute the LAST sub
+    # letter for its tight variant only when ']' is followed by a base
+    # swara — same meend/space gating super uses. Must run BEFORE close-sub
+    # consumes ']'.
     top_level.append(add_lookup(make_lookup(6, [make_chain_ctx(
-        backtrack=[sub_class],
+        backtrack=[],
+        input_=[sub_class, ['bracketright']],
+        lookahead=[base_class],
+        subst_records=[(0, idx_sub_to_tight)])])))
+    # Close: hide ']' whenever it's preceded by a sub or sub_tight glyph.
+    # Backtrack class is the union — covers both the tightened case
+    # (trail-pull fired) and the un-tightened case (cluster followed by
+    # meend / space / other non-swara, where the lookahead didn't match).
+    sub_tight_class = list(sub_tight_pairs.values())
+    top_level.append(add_lookup(make_lookup(6, [make_chain_ctx(
+        backtrack=[sub_class + sub_tight_class],
         input_=[['bracketright']],
         lookahead=[],
         subst_records=[(0, idx_hide_bracket_close)])])))

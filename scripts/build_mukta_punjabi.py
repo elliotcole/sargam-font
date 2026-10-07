@@ -436,6 +436,7 @@ def modify_font(input_path: str, output_path: str):
     super_pairs = {}
     sub_pairs   = {}
     super_tight_pairs = {}
+    sub_tight_pairs   = {}   # sub_name → sub_tight_name (sub TRAIL pull)
     base_tight_pairs  = {}
     for base in kan_sur_base:
         adv = hmtx[base][0]
@@ -447,15 +448,24 @@ def modify_font(input_path: str, output_path: str):
         super_adv = int(round(adv * SUPER_SCALE))
         glyf[f'{base}_super_tight'] = _make_composite([(base, 0, SUPER_DY, SUPER_SCALE)])
         hmtx[f'{base}_super_tight'] = (max(0, super_adv - KAN_SUR_TRAIL_PULL), 0)
-        # base_tight: full-size base with reduced advance (sub LEAD pull, mirror).
+        # sub_tight: SUB variant with reduced advance (sub TRAIL pull). Used
+        # as the LAST sub of a `[...]` cluster — pulls the following swara
+        # closer so the sub reads as part of the swara it leads to.
+        sub_adv = int(round(adv * SUB_SCALE))
+        glyf[f'{base}_sub_tight'] = _make_composite([(base, 0, SUB_DY, SUB_SCALE)])
+        hmtx[f'{base}_sub_tight'] = (max(0, sub_adv - KAN_SUR_TRAIL_PULL), 0)
+        # base_tight: full-size base with reduced advance (sub LEAD pull,
+        # fires when bracket sits immediately against a swara with no space).
         glyf[f'{base}_tight'] = _make_composite([(base, 0, 0, 1.0)])
         hmtx[f'{base}_tight'] = (max(0, adv - KAN_SUR_TRAIL_PULL), 0)
         super_pairs[base]       = f'{base}_super'
         sub_pairs[base]         = f'{base}_sub'
         super_tight_pairs[f'{base}_super'] = f'{base}_super_tight'
+        sub_tight_pairs[f'{base}_sub']     = f'{base}_sub_tight'
         base_tight_pairs[base]  = f'{base}_tight'
         new_glyphs += [f'{base}_super', f'{base}_sub',
-                       f'{base}_super_tight', f'{base}_tight']
+                       f'{base}_super_tight', f'{base}_sub_tight',
+                       f'{base}_tight']
 
     # Zero-width invisible glyph for boundary marker consumption.
     invisible = Glyph(); invisible.numberOfContours = 0
@@ -593,10 +603,12 @@ def modify_font(input_path: str, output_path: str):
     sub_class   = list(sub_pairs.values())
     base_class  = list(super_pairs.keys())
     super_tight_class = list(super_tight_pairs.values())
+    sub_tight_class   = list(sub_tight_pairs.values())
 
     idx_super              = _add_lookup(_make_lookup(1, [_single_subst(super_pairs)]))
     idx_sub                = _add_lookup(_make_lookup(1, [_single_subst(sub_pairs)]))
     idx_super_to_tight     = _add_lookup(_make_lookup(1, [_single_subst(super_tight_pairs)]))
+    idx_sub_to_tight       = _add_lookup(_make_lookup(1, [_single_subst(sub_tight_pairs)]))
     idx_base_to_tight      = _add_lookup(_make_lookup(1, [_single_subst(base_tight_pairs)]))
     idx_hide_paren_open    = _add_lookup(_make_lookup(1, [_single_subst({'parenleft':    'kan_sur_invisible'})]))
     idx_hide_paren_close   = _add_lookup(_make_lookup(1, [_single_subst({'parenright':   'kan_sur_invisible'})]))
@@ -631,7 +643,7 @@ def modify_font(input_path: str, output_path: str):
         input_=[base_class, ['bracketleft']],
         lookahead=[base_class],
         subst_records=[(0, idx_base_to_tight)])])))
-    # Sub: open, continue, close.
+    # Sub: open, continue, trail-pull, close.
     top_level.append(_add_lookup(_make_lookup(6, [_chain_ctx(
         backtrack=[],
         input_=[['bracketleft'], base_class],
@@ -642,8 +654,15 @@ def modify_font(input_path: str, output_path: str):
         input_=[base_class],
         lookahead=[],
         subst_records=[(0, idx_sub)])])))
+    # Sub TRAIL pull (mirror of super TRAIL pull). Must run BEFORE close-sub.
     top_level.append(_add_lookup(_make_lookup(6, [_chain_ctx(
-        backtrack=[sub_class],
+        backtrack=[],
+        input_=[sub_class, ['bracketright']],
+        lookahead=[base_class],
+        subst_records=[(0, idx_sub_to_tight)])])))
+    # Close: hide ']' whenever preceded by a sub or sub_tight glyph.
+    top_level.append(_add_lookup(_make_lookup(6, [_chain_ctx(
+        backtrack=[sub_class + sub_tight_class],
         input_=[['bracketright']],
         lookahead=[],
         subst_records=[(0, idx_hide_bracket_close)])])))
