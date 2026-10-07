@@ -1,11 +1,11 @@
 #!/bin/bash
-# Copy v2 build outputs to a target font directory in a host application.
+# Copy Lato-Sargam build outputs to a target font directory in a host application.
 #
 # Usage:
 #   scripts/deploy.sh /path/to/app/assets/fonts
 #   SARGAM_TARGET=/path/to/app/assets/fonts scripts/deploy.sh
 #
-# The target directory must already exist. Only the four v2 woff/woff2 files
+# The target directory must already exist. Only the four Lato-Sargam woff/woff2 files
 # are copied; nothing else in the target is touched.
 set -euo pipefail
 
@@ -21,7 +21,7 @@ if [ ! -d "$TARGET" ]; then
 fi
 
 SOURCE="$(cd "$(dirname "$0")/.." && pwd)/out"
-for f in Lato-Sargam-v2.woff2 Lato-Sargam-v2.woff Lato-Sargam-v2-Bold.woff2 Lato-Sargam-v2-Bold.woff; do
+for f in Lato-Sargam.woff2 Lato-Sargam.woff Lato-Sargam-Bold.woff2 Lato-Sargam-Bold.woff; do
   if [ ! -f "$SOURCE/$f" ]; then
     echo "Missing build output: $SOURCE/$f — run scripts/build.py first" >&2
     exit 1

@@ -9,50 +9,50 @@
      query strings on file:// URLs, so the version lives in the filename. */
   @font-face {
     font-family: 'LatoSargam';
-    src: url('../out/Lato-Sargam-v2-23.woff2') format('woff2'),
-         url('../out/Lato-Sargam-v2-23.woff') format('woff');
+    src: url('../out/Lato-Sargam-3.0-24.woff2') format('woff2'),
+         url('../out/Lato-Sargam-3.0-24.woff') format('woff');
     font-weight: 400; font-style: normal; font-display: swap;
   }
   @font-face {
     font-family: 'LatoSargam';
-    src: url('../out/Lato-Sargam-v2-Bold-23.woff2') format('woff2'),
-         url('../out/Lato-Sargam-v2-Bold-23.woff') format('woff');
+    src: url('../out/Lato-Sargam-Bold-3.0-24.woff2') format('woff2'),
+         url('../out/Lato-Sargam-Bold-3.0-24.woff') format('woff');
     font-weight: 700; font-style: normal; font-display: swap;
   }
   @font-face {
     font-family: 'MuktaSargam';
-    src: url('../out/Mukta-Sargam-15.woff2') format('woff2'),
-         url('../out/Mukta-Sargam-15.woff') format('woff');
+    src: url('../out/Mukta-Sargam-3.0-17.woff2') format('woff2'),
+         url('../out/Mukta-Sargam-3.0-17.woff') format('woff');
     font-weight: 400; font-style: normal; font-display: swap;
   }
   @font-face {
     font-family: 'MuktaSargam';
-    src: url('../out/Mukta-Sargam-Bold-15.woff2') format('woff2'),
-         url('../out/Mukta-Sargam-Bold-15.woff') format('woff');
+    src: url('../out/Mukta-Sargam-Bold-3.0-17.woff2') format('woff2'),
+         url('../out/Mukta-Sargam-Bold-3.0-17.woff') format('woff');
     font-weight: 700; font-style: normal; font-display: swap;
   }
   @font-face {
     font-family: 'MuktaSargamHindi';
-    src: url('../out/Mukta-Sargam-Hindi-10.woff2') format('woff2'),
-         url('../out/Mukta-Sargam-Hindi-10.woff') format('woff');
+    src: url('../out/Mukta-Sargam-Hindi-3.0-12.woff2') format('woff2'),
+         url('../out/Mukta-Sargam-Hindi-3.0-12.woff') format('woff');
     font-weight: 400; font-style: normal; font-display: swap;
   }
   @font-face {
     font-family: 'MuktaSargamHindi';
-    src: url('../out/Mukta-Sargam-Hindi-Bold-10.woff2') format('woff2'),
-         url('../out/Mukta-Sargam-Hindi-Bold-10.woff') format('woff');
+    src: url('../out/Mukta-Sargam-Hindi-Bold-3.0-12.woff2') format('woff2'),
+         url('../out/Mukta-Sargam-Hindi-Bold-3.0-12.woff') format('woff');
     font-weight: 700; font-style: normal; font-display: swap;
   }
   @font-face {
     font-family: 'MuktaSargamPunjabi';
-    src: url('../out/Mukta-Sargam-Punjabi-9.woff2') format('woff2'),
-         url('../out/Mukta-Sargam-Punjabi-9.woff') format('woff');
+    src: url('../out/Mukta-Sargam-Punjabi-3.0-12.woff2') format('woff2'),
+         url('../out/Mukta-Sargam-Punjabi-3.0-12.woff') format('woff');
     font-weight: 400; font-style: normal; font-display: swap;
   }
   @font-face {
     font-family: 'MuktaSargamPunjabi';
-    src: url('../out/Mukta-Sargam-Punjabi-Bold-9.woff2') format('woff2'),
-         url('../out/Mukta-Sargam-Punjabi-Bold-9.woff') format('woff');
+    src: url('../out/Mukta-Sargam-Punjabi-Bold-3.0-12.woff2') format('woff2'),
+         url('../out/Mukta-Sargam-Punjabi-Bold-3.0-12.woff') format('woff');
     font-weight: 700; font-style: normal; font-display: swap;
   }
 
@@ -85,6 +85,7 @@
     padding: 2rem 1.5rem 4rem;
   }
   h1 { font-weight: 600; margin: 0 0 0.2em; font-size: 1.7rem; }
+  h1 .version { font-weight: 400; color: var(--muted); font-size: 1rem; }
   h2 {
     font-weight: 500;
     margin: 2.4em 0 0.8em;
@@ -201,7 +202,7 @@
 </head>
 <body data-font="lato">
 
-<h1>Sargam Font Preview</h1>
+<h1>Sargam Font Preview <span class="version">v3.0</span></h1>
 <p class="sub">All four fonts share the same input conventions. Pick a font from the toggle below — the demos and the playground will swap to it.</p>
 
 <nav class="font-toggle" aria-label="Font selector">

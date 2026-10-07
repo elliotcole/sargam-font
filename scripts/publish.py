@@ -35,13 +35,13 @@ README = """# Sargam Font Preview
 
 Live preview: https://<your-github-username>.github.io/sargam-font/
 
-Hindustani classical sargam notation rendered through four font variants:
+Version 3.0. Hindustani classical sargam notation rendered through four font variants:
 - **Lato-Sargam** (Latin output)
 - **Mukta-Sargam** (Latin output, Mukta typeface)
 - **Mukta-Sargam-Hindi** (Devanagari output)
 - **Mukta-Sargam-Punjabi** (Gurmukhi output)
 
-Type Latin sargam (`S R G m M P D N`, lowercase = komal, `'X` = tar, `,X` = mandra,
+Type Latin sargam (`S R G m M P D N`, lowercase = komal, `X'` = tar, `,X` = mandra,
 `X~` = murki, `X~~` = andolan, `(X)` = kan-sur, `[X]` = subscript) and the font
 renders it as proper notation — including syllabic रे / ਰੇ for R and नी / ਨੀ for N.
 
@@ -66,7 +66,7 @@ def main():
     # Collect every ../out/<file>.woffN reference; copy each into docs/fonts/
     # and rewrite the path. This naturally picks up only what's actually
     # referenced — stale versioned files in out/ are ignored.
-    referenced = set(re.findall(r"\.\./out/([A-Za-z0-9_\-]+\.woff2?)", html))
+    referenced = set(re.findall(r"\.\./out/([A-Za-z0-9_.\-]+?\.woff2?)", html))
     if not referenced:
         sys.exit("no ../out/...woff references found in preview HTML")
 
@@ -80,7 +80,7 @@ def main():
     if missing:
         sys.exit(f"missing fonts in out/: {missing}")
 
-    new_html = re.sub(r"\.\./out/([A-Za-z0-9_\-]+\.woff2?)", r"fonts/\1", html)
+    new_html = re.sub(r"\.\./out/([A-Za-z0-9_.\-]+?\.woff2?)", r"fonts/\1", html)
     (DOCS / 'index.html').write_text(new_html)
 
     # Bundle the OFL.txt files we have available, with simple section headers.

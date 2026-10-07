@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build Lato-Sargam v2 from v1.
+Build Lato-Sargam (Sargam family version: see sargam_version.py) from v1.
 
 v2 conventions:
   Lowercase r/g/d/n = komal,  uppercase R/G/D/N = shuddha
@@ -10,11 +10,12 @@ v2 conventions:
   S~~ = andolan (wavy line drawn AFTER the letter, taking its own space)
   /  \\  = meend (long curved diagonals between swaras)
 
-Reads v1 fonts from ./src, writes v2 fonts to ./out.
+Reads v1 fonts from ./src, writes Lato-Sargam fonts to ./out.
 """
 import io, os
 from pathlib import Path
 from fontTools.ttLib import TTFont
+from sargam_version import VERSION, stamp_version, bump_preview_cache_buster
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR      = PROJECT_ROOT / 'src'
@@ -848,70 +849,19 @@ def modify_font(input_path: str, output_path: str):
         font2.flavor = 'woff2'
     elif output_path.endswith('.woff'):
         font2.flavor = 'woff'
+    stamp_version(font2)
     font2.save(output_path)
     print(f"  Saved: {output_path}")
 
-
-def bump_preview_cache_buster():
-    """Each build copies the canonical out/Lato-Sargam-v2*.woff(2) files to
-    versioned names (Lato-Sargam-v2-N.woff2 etc.) and rewrites the preview
-    HTML to point at those versioned names. Safari aggressively caches
-    file:// resources by URL path and ignores query strings, so making the
-    URL path itself unique each build is the only reliable cache miss
-    without manual intervention. Old versioned files are deleted; the
-    canonical files stay put for deploy.sh."""
-    import re, shutil
-    preview = PROJECT_ROOT / 'preview' / 'index.html'
-    if not preview.exists():
-        return
-    text = preview.read_text()
-
-    m = re.search(r'Lato-Sargam-v2(?:-Bold)?-(\d+)\.woff', text)
-    current = int(m.group(1)) if m else 0
-    next_v = (current + 1) if 0 < current < 1_000_000 else 1
-
-    # Sweep old versioned files. Patterns are anchored so the canonical
-    # Lato-Sargam-v2.woff(2) and Lato-Sargam-v2-Bold.woff(2) stay untouched.
-    for old in OUT_DIR.glob('Lato-Sargam-v2-Bold-[0-9]*.woff*'):
-        old.unlink()
-    for old in OUT_DIR.glob('Lato-Sargam-v2-[0-9]*.woff*'):
-        old.unlink()
-
-    # Copy canonical → versioned
-    pairs = [
-        ('Lato-Sargam-v2.woff2',      f'Lato-Sargam-v2-{next_v}.woff2'),
-        ('Lato-Sargam-v2.woff',       f'Lato-Sargam-v2-{next_v}.woff'),
-        ('Lato-Sargam-v2-Bold.woff2', f'Lato-Sargam-v2-Bold-{next_v}.woff2'),
-        ('Lato-Sargam-v2-Bold.woff',  f'Lato-Sargam-v2-Bold-{next_v}.woff'),
-    ]
-    copied = 0
-    for canonical, versioned in pairs:
-        src = OUT_DIR / canonical
-        if src.exists():
-            shutil.copy(src, OUT_DIR / versioned)
-            copied += 1
-
-    # Rewrite preview HTML font URLs: replace any
-    #   Lato-Sargam-v2[-Bold][-N].woff(2)?[?v=...]
-    # with the new versioned filename (and drop any leftover ?v= query string).
-    pattern = re.compile(r'Lato-Sargam-v2(-Bold)?(?:-\d+)?\.woff(2?)(?:\?v=\d+)?')
-    def replace(match):
-        bold = match.group(1) or ''
-        ext  = match.group(2)
-        return f'Lato-Sargam-v2{bold}-{next_v}.woff{ext}'
-    new_text = pattern.sub(replace, text)
-    if new_text != text:
-        preview.write_text(new_text)
-        print(f"  Updated preview → versioned filenames (-{next_v}.woff[2]); copied {copied} files")
 
 
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     pairs = [
-        ('Lato-Sargam-v1.woff2',      'Lato-Sargam-v2.woff2'),
-        ('Lato-Sargam-v1.woff',       'Lato-Sargam-v2.woff'),
-        ('Lato-Sargam-v1-Bold.woff2', 'Lato-Sargam-v2-Bold.woff2'),
-        ('Lato-Sargam-v1-Bold.woff',  'Lato-Sargam-v2-Bold.woff'),
+        ('Lato-Sargam-v1.woff2',      'Lato-Sargam.woff2'),
+        ('Lato-Sargam-v1.woff',       'Lato-Sargam.woff'),
+        ('Lato-Sargam-v1-Bold.woff2', 'Lato-Sargam-Bold.woff2'),
+        ('Lato-Sargam-v1-Bold.woff',  'Lato-Sargam-Bold.woff'),
     ]
     for src_name, dst_name in pairs:
         src = LATO_V1_DIR / src_name
@@ -922,9 +872,9 @@ def main():
         print(f"\n{src_name} → {dst_name}")
         modify_font(str(src), str(dst))
 
-    bump_preview_cache_buster()
+    bump_preview_cache_buster(PROJECT_ROOT / 'preview' / 'index.html', OUT_DIR, 'Lato-Sargam')
 
-    print("\n=== Lato-Sargam v2 ===")
+    print(f"\n=== Lato-Sargam {VERSION} ===")
     print("  M=tivra  m=shuddha  R/G/D/N=shuddha  r/g/d/n=komal  S/s=Sa  P/p=Pa")
 
 

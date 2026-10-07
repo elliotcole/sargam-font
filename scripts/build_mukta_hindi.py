@@ -28,6 +28,7 @@ Step 1 swapped to use Devanagari outlines.
 import io, os, copy, math, re
 from pathlib import Path
 from fontTools.ttLib import TTFont
+from sargam_version import VERSION, stamp_version, set_family_name, bump_preview_cache_buster
 from fontTools.ttLib.tables._g_l_y_f import Glyph, GlyphComponent
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates as _GC
 from fontTools.ttLib.tables import ttProgram
@@ -687,46 +688,11 @@ def modify_font(input_path: str, output_path: str):
         font2.flavor = 'woff2'
     elif output_path.endswith('.woff'):
         font2.flavor = 'woff'
+    set_family_name(font2, 'Mukta Sargam Hindi')
+    stamp_version(font2)
     font2.save(output_path)
     print(f"  Saved: {output_path}")
 
-
-def bump_preview_cache_buster():
-    """Same versioned-filename strategy as scripts/build.py — see there."""
-    import shutil
-    preview = PROJECT_ROOT / 'preview' / 'index.html'
-    if not preview.exists():
-        return
-    text = preview.read_text()
-    m = re.search(r'Mukta-Sargam-Hindi(?:-Bold)?-(\d+)\.woff', text)
-    current = int(m.group(1)) if m else 0
-    next_v = (current + 1) if 0 < current < 1_000_000 else 1
-    for old in OUT_DIR.glob('Mukta-Sargam-Hindi-Bold-[0-9]*.woff*'):
-        old.unlink()
-    for old in OUT_DIR.glob('Mukta-Sargam-Hindi-[0-9]*.woff*'):
-        old.unlink()
-    pairs = [
-        ('Mukta-Sargam-Hindi.woff2',      f'Mukta-Sargam-Hindi-{next_v}.woff2'),
-        ('Mukta-Sargam-Hindi.woff',       f'Mukta-Sargam-Hindi-{next_v}.woff'),
-        ('Mukta-Sargam-Hindi-Bold.woff2', f'Mukta-Sargam-Hindi-Bold-{next_v}.woff2'),
-        ('Mukta-Sargam-Hindi-Bold.woff',  f'Mukta-Sargam-Hindi-Bold-{next_v}.woff'),
-    ]
-    copied = 0
-    for canonical, versioned in pairs:
-        src = OUT_DIR / canonical
-        if src.exists():
-            shutil.copy(src, OUT_DIR / versioned)
-            copied += 1
-    pattern = re.compile(r'Mukta-Sargam-Hindi(-Bold)?(?:-\d+)?\.woff(2?)(?:\?v=\d+)?')
-    def replace(match):
-        bold = match.group(1) or ''
-        ext  = match.group(2)
-        return f'Mukta-Sargam-Hindi{bold}-{next_v}.woff{ext}'
-    new_text = pattern.sub(replace, text)
-    if new_text != text:
-        preview.write_text(new_text)
-    if copied:
-        print(f"  Versioned Mukta-Sargam-Hindi preview filenames -> -{next_v} ({copied} files)")
 
 
 def main():
@@ -746,9 +712,9 @@ def main():
         print(f"\n{src_name} → {dst_name}")
         modify_font(str(src), str(dst))
 
-    bump_preview_cache_buster()
+    bump_preview_cache_buster(PROJECT_ROOT / 'preview' / 'index.html', OUT_DIR, 'Mukta-Sargam-Hindi')
 
-    print("\n=== Mukta-Sargam-Hindi ===")
+    print(f"\n=== Mukta-Sargam-Hindi {VERSION} ===")
     print("  Latin in → Devanagari out. M=tivra Ma, m=shuddha Ma, lowercase=komal")
 
 
